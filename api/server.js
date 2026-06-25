@@ -273,8 +273,7 @@ app.put('/api/admin/products/:id', auth, upload.array('images', 6), async (req, 
         urls.push(url)
       }
       update.images = urls
-    }
-    }
+    }    
     const product = await Product.findByIdAndUpdate(req.params.id, update, { new: true })
     if (!product) return res.status(404).json({ message: 'Product not found' })
     res.json(product)
