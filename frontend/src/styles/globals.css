@@ -1,0 +1,86 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;500;600&family=Jost:wght@300;400;500;600&display=swap');
+
+@layer base {
+  *, *::before, *::after { box-sizing: border-box; }
+  html { scroll-behavior: smooth; -webkit-text-size-adjust: 100%; }
+  body {
+    font-family: 'Jost', system-ui, sans-serif;
+    color: #1C1814;
+    background: #FFFFFF;
+    line-height: 1.6;
+    overflow-x: hidden;
+    -webkit-font-smoothing: antialiased;
+  }
+  h1,h2,h3,h4,h5,h6 {
+    font-family: 'Playfair Display', Georgia, serif;
+    font-weight: 500;
+    line-height: 1.15;
+    letter-spacing: -0.01em;
+  }
+  a { color: inherit; text-decoration: none; }
+  img { display: block; max-width: 100%; }
+  button { cursor: pointer; }
+  ul, ol { list-style: none; padding: 0; margin: 0; }
+}
+
+@layer components {
+  .container-site {
+    width: 100%;
+    max-width: 1300px;
+    margin-inline: auto;
+    padding-inline: clamp(1rem, 4vw, 2.5rem);
+  }
+
+  .btn-primary {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-walnut text-white text-xs font-semibold tracking-widest uppercase border border-walnut transition-all duration-200 rounded-sm hover:bg-walnut-light hover:border-walnut-light;
+  }
+  .btn-outline {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-transparent text-walnut text-xs font-semibold tracking-widest uppercase border border-walnut transition-all duration-200 rounded-sm hover:bg-walnut hover:text-white;
+  }
+  .btn-gold {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-gold text-white text-xs font-semibold tracking-widest uppercase border border-gold transition-all duration-200 rounded-sm hover:bg-amber-600;
+  }
+  .btn-ghost {
+    @apply inline-flex items-center gap-2 text-stone text-xs font-medium tracking-wider uppercase py-1 border-b border-transparent transition-all duration-200 hover:text-walnut hover:border-walnut;
+  }
+  .btn-danger {
+    @apply inline-flex items-center justify-center gap-2 px-6 py-3 bg-red-700 text-white text-xs font-semibold tracking-widest uppercase border border-red-700 transition-all duration-200 rounded-sm hover:bg-red-800;
+  }
+
+  .form-input {
+    @apply w-full px-4 py-3 border border-bone bg-white text-walnut text-sm outline-none transition-colors duration-200 rounded-sm focus:border-walnut;
+  }
+  .form-label {
+    @apply block text-xs font-semibold tracking-widest uppercase text-stone mb-2;
+  }
+  .form-error {
+    @apply text-xs text-red-600 mt-1;
+  }
+
+  .eyebrow {
+    @apply text-xs font-semibold tracking-widest uppercase text-gold;
+  }
+  .section-pad {
+    padding-block: clamp(3rem, 8vw, 6rem);
+  }
+  .section-pad-sm {
+    padding-block: clamp(2rem, 5vw, 4rem);
+  }
+
+  .product-card {
+    @apply group relative bg-white border border-bone/50 rounded-sm overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5;
+  }
+  .product-card-img {
+    @apply w-full aspect-[4/3] object-cover bg-ivory-dark transition-transform duration-500 group-hover:scale-105;
+  }
+
+  /* Scrollbar */
+  ::-webkit-scrollbar { width: 4px; height: 4px; }
+  ::-webkit-scrollbar-track { background: #F9F6F1; }
+  ::-webkit-scrollbar-thumb { background: #E8E1D6; border-radius: 2px; }
+  ::-webkit-scrollbar-thumb:hover { background: #A09890; }
+}
