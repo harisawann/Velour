@@ -9,7 +9,7 @@ const Product  = require('./lib/models/Product')
 const Order    = require('./lib/models/Order')
 const Admin    = require('./lib/models/Admin')
 const auth     = require('./lib/auth')
-const { upload, cloudinary } = require('./lib/cloudinary')
+const { upload, cloudinary, uploadToCloudinary } = require('./lib/cloudinary')
 
 const app = express()
 
@@ -233,7 +233,11 @@ app.get('/api/admin/products', auth, async (req, res) => {
 app.post('/api/admin/products', auth, upload.array('images', 6), async (req, res) => {
   try {
     const { title, category, price, comparePrice, desc, stock, status, sizes, colors } = req.body
-    const images = req.files?.map(f => f.path) || []
+    const images = []
+    for (const file of req.files || []) {
+      const url = await uploadToCloudinary(file.buffer, file.mimetype)
+      images.push(url)
+    }
     const product = await Product.create({
       title, category, desc, status: status || 'active',
       price: Number(price),
@@ -263,7 +267,13 @@ app.put('/api/admin/products/:id', auth, upload.array('images', 6), async (req, 
       'variants.colors': colors ? colors.split(',').map(c => c.trim()).filter(Boolean) : [],
     }
     if (req.files?.length) {
-      update.images = req.files.map(f => f.path)
+      const urls = []
+      for (const file of req.files) {
+        const url = await uploadToCloudinary(file.buffer, file.mimetype)
+        urls.push(url)
+      }
+      update.images = urls
+    }
     }
     const product = await Product.findByIdAndUpdate(req.params.id, update, { new: true })
     if (!product) return res.status(404).json({ message: 'Product not found' })
