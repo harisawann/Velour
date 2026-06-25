@@ -19,7 +19,7 @@ export default function ProductCard({ product }) {
   const mainImg = !imgErr && product.images?.[0]
 
   return (
-    <Link to={`/product/${product._id}`} className="product-card block">
+<Link to={`/product/${product._id}`} className="product-card group block">
       {/* Image */}
       <div className="relative overflow-hidden bg-ivory-dark aspect-[4/3]">
         {mainImg ? (

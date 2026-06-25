@@ -72,7 +72,7 @@
   }
 
   .product-card {
-    @apply group relative bg-white border border-bone/50 rounded-sm overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5;
+    @apply relative bg-white border border-bone/50 rounded-sm overflow-hidden transition-all duration-300 hover:shadow-lg hover:-translate-y-0.5;
   }
   .product-card-img {
     @apply w-full aspect-[4/3] object-cover bg-ivory-dark transition-transform duration-500 group-hover:scale-105;
