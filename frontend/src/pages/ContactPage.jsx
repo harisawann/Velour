@@ -41,7 +41,7 @@ export default function ContactPage() {
                 {[
                   [MessageCircle, 'WhatsApp', '+44 7349 790597', 'https://wa.me/447349790597', true],
                   [Phone, 'Phone', '+44 7349 790597', 'tel:+447349790597', false],
-                  [Mail, 'Email', 'hello@velour.co.uk', 'mailto:hello@velour.co.uk', false],
+                  [Mail, 'Email', 'velour.uk.co@gmail.com', 'velour.uk.co@gmail.com', false],
                 ].map(([Icon, label, value, href, highlight]) => (
                   <div key={label} className="flex items-start gap-4 pb-5 border-b border-bone last:border-b-0">
                     <div className={`w-10 h-10 rounded-sm flex items-center justify-center flex-shrink-0 ${highlight ? 'bg-[#25D366]' : 'bg-ivory-dark'}`}>
