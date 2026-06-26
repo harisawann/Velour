@@ -11,7 +11,7 @@ const reviewSchema = new mongoose.Schema({
 
 const productSchema = new mongoose.Schema({
   title:        { type: String, required: true, trim: true },
-  category:     { type: String, required: true, enum: ['sofa', 'bed'] },
+category:     { type: String, required: true },
   price:        { type: Number, required: true, min: 0 },
   comparePrice: { type: Number, default: 0 },
   desc:         { type: String, default: '' },
