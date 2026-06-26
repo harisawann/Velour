@@ -438,17 +438,12 @@ app.post('/api/admin/messages/:id/reply', auth, async (req, res) => {
     const msg = await Message.findById(req.params.id)
     if (!msg) return res.status(404).json({ message: 'Message not found' })
 
-    const nodemailer = require('nodemailer')
-    const transporter = nodemailer.createTransport({
-      service: 'gmail',
-      auth: {
-        user: process.env.GMAIL_USER,
-        pass: process.env.GMAIL_APP_PASSWORD,
-      },
-    })
+    const { Resend } = require('resend')
+    const resend = new Resend(process.env.RESEND_API_KEY)
 
-    await transporter.sendMail({
-      from: `"Velour Furniture" <${process.env.GMAIL_USER}>`,
+    await resend.emails.send({
+      from: 'Velour Furniture <onboarding@resend.dev>',
+      replyTo: 'velour.uk.co@gmail.com',
       to: msg.email,
       subject: `Re: ${msg.subject}`,
       html: `
