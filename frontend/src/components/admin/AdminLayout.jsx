@@ -8,6 +8,7 @@ import {
 } from 'react-router-dom'
 
 import { useAdminAuth } from '../../context/AdminAuthContext'
+import api from '../../utils/api';
 
 import {
   Tag,
