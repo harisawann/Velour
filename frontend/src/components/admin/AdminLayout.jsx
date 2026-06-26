@@ -1,11 +1,26 @@
 import React, { useState, useEffect } from 'react'
-import { Tag, Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
-import { Tag, useAdminAuth } from '../../context/AdminAuthContext'
-import { Tag,
-  LayoutDashboard, Package, ShoppingBag, Users,
-  LogOut, Menu, X, ChevronRight, Mail
+
+import {
+  Link,
+  useLocation,
+  useNavigate,
+  Outlet
+} from 'react-router-dom'
+
+import { useAdminAuth } from '../../context/AdminAuthContext'
+
+import {
+  Tag,
+  LayoutDashboard,
+  Package,
+  ShoppingBag,
+  Users,
+  LogOut,
+  Menu,
+  X,
+  ChevronRight,
+  Mail
 } from 'lucide-react'
-import api from '../../utils/api'
 
 const NAV = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
