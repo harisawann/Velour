@@ -5,7 +5,7 @@ import api from '../../utils/api'
 import toast from 'react-hot-toast'
 
 const EMPTY_FORM = {
-  title: '', category: 'sofa', price: '', comparePrice: '', desc: '',
+  title: '', category: '', price: '', comparePrice: '', desc: '',
   stock: '', status: 'active',
   variants: { sizes: '', colors: '' },
 }
@@ -18,6 +18,16 @@ function ProductModal({ product, onClose, onSaved }) {
   const [images, setImages] = useState([])
   const [previews, setPreviews] = useState(product?.images || [])
   const [saving, setSaving] = useState(false)
+  const [categories, setCategories] = useState([])
+
+  useEffect(() => {
+    api.get('/categories').then(r => {
+      setCategories(r.data || [])
+      if (!form.category && r.data.length > 0) {
+        setForm(f => ({ ...f, category: r.data[0].slug }))
+      }
+    }).catch(() => {})
+  }, [])
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
   const setVar = (key, val) => setForm(f => ({ ...f, variants: { ...f.variants, [key]: val } }))
@@ -74,9 +84,11 @@ function ProductModal({ product, onClose, onSaved }) {
             </div>
             <div>
               <label className="form-label">Category *</label>
-              <select value={form.category} onChange={e => set('category', e.target.value)} className="form-input">
-                <option value="sofa">Sofa</option>
-                <option value="bed">Bed</option>
+              <select value={form.category} onChange={e => set('category', e.target.value)} className="form-input" required>
+                <option value="">Select category…</option>
+                {categories.map(c => (
+                  <option key={c._id} value={c.slug}>{c.name}</option>
+                ))}
               </select>
             </div>
             <div>
@@ -113,7 +125,6 @@ function ProductModal({ product, onClose, onSaved }) {
               <input value={form.variants.colors} onChange={e => setVar('colors', e.target.value)} className="form-input" placeholder="Velvet Grey, Ivory, Charcoal" />
             </div>
           </div>
-          {/* Images */}
           <div>
             <label className="form-label">Product Images</label>
             <label className="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-bone rounded-sm cursor-pointer hover:border-walnut transition-colors bg-ivory/50">
@@ -155,8 +166,13 @@ export default function AdminProducts() {
   const [loading, setLoading] = useState(true)
   const [search, setSearch] = useState('')
   const [cat, setCat] = useState('')
-  const [modal, setModal] = useState(null) // null | 'add' | product object
+  const [modal, setModal] = useState(null)
   const [deleting, setDeleting] = useState(null)
+  const [categories, setCategories] = useState([])
+
+  useEffect(() => {
+    api.get('/categories').then(r => setCategories(r.data || [])).catch(() => {})
+  }, [])
 
   const fetchProducts = useCallback(async () => {
     setLoading(true)
@@ -186,6 +202,8 @@ export default function AdminProducts() {
     setDeleting(null)
   }
 
+  const getCatName = (slug) => categories.find(c => c.slug === slug)?.name || slug
+
   return (
     <div className="p-6 lg:p-8">
       {modal && (
@@ -213,11 +231,15 @@ export default function AdminProducts() {
           <input type="text" placeholder="Search products…" value={search}
             onChange={e => setSearch(e.target.value)} className="form-input pl-9 py-2 text-sm" />
         </div>
-        <div className="flex gap-2">
-          {[['', 'All'], ['sofa', 'Sofas'], ['bed', 'Beds']].map(([val, label]) => (
-            <button key={val} onClick={() => setCat(val)}
-              className={`px-4 py-2 text-xs font-medium border rounded-sm transition-colors ${cat === val ? 'bg-walnut text-white border-walnut' : 'border-bone text-stone hover:border-walnut'}`}>
-              {label}
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setCat('')}
+            className={`px-4 py-2 text-xs font-medium border rounded-sm transition-colors ${cat === '' ? 'bg-walnut text-white border-walnut' : 'border-bone text-stone hover:border-walnut'}`}>
+            All
+          </button>
+          {categories.map(c => (
+            <button key={c._id} onClick={() => setCat(c.slug)}
+              className={`px-4 py-2 text-xs font-medium border rounded-sm transition-colors ${cat === c.slug ? 'bg-walnut text-white border-walnut' : 'border-bone text-stone hover:border-walnut'}`}>
+              {c.name}
             </button>
           ))}
         </div>
@@ -249,16 +271,14 @@ export default function AdminProducts() {
                 {product.images?.[0] ? (
                   <img src={product.images[0]} alt={product.title} className="w-full h-full object-cover" />
                 ) : (
-                  <div className="w-full h-full flex items-center justify-center text-4xl">
-                    {product.category === 'sofa' ? '🛋' : '🛏'}
-                  </div>
+                  <div className="w-full h-full flex items-center justify-center text-4xl">🛋</div>
                 )}
                 <div className={`absolute top-2 right-2 text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full ${product.status === 'active' ? 'bg-green-100 text-green-700' : 'bg-gray-100 text-gray-500'}`}>
                   {product.status}
                 </div>
               </div>
               <div className="p-4">
-                <p className="text-[10px] text-stone uppercase tracking-widest mb-1">{product.category === 'sofa' ? 'Sofa' : 'Bed'}</p>
+                <p className="text-[10px] text-stone uppercase tracking-widest mb-1">{getCatName(product.category)}</p>
                 <p className="font-medium text-walnut text-sm truncate mb-1">{product.title}</p>
                 <div className="flex items-center justify-between">
                   <span className="font-semibold text-walnut text-sm">{formatPrice(product.price)}</span>

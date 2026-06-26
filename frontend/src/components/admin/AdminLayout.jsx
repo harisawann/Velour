@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react'
-import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
-import { useAdminAuth } from '../../context/AdminAuthContext'
-import {
+import { Tag, Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
+import { Tag, useAdminAuth } from '../../context/AdminAuthContext'
+import { Tag,
   LayoutDashboard, Package, ShoppingBag, Users,
   LogOut, Menu, X, ChevronRight, Mail
 } from 'lucide-react'
@@ -12,7 +12,8 @@ const NAV = [
   { to: '/admin/orders',    icon: ShoppingBag,     label: 'Orders' },
   { to: '/admin/products',  icon: Package,         label: 'Products' },
   { to: '/admin/customers', icon: Users,           label: 'Customers' },
-  { to: '/admin/messages',  icon: Mail,            label: 'Messages' },
+  { to: '/admin/messages',    icon: Mail,            label: 'Messages' },
+  { to: '/admin/categories',  icon: Tag,             label: 'Categories' },
 ]
 
 export default function AdminLayout() {

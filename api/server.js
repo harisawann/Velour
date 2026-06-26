@@ -380,3 +380,96 @@ app.delete('/api/admin/messages/:id', auth, async (req, res) => {
     res.status(500).json({ message: err.message })
   }
 })
+
+// ── Categories (Public) ─────────────────────────────────────
+const Category = require('./lib/models/Category')
+
+async function seedCategories() {
+  const count = await Category.countDocuments()
+  if (count === 0) {
+    await Category.insertMany([
+      { name: 'Sofa', slug: 'sofa', order: 1 },
+      { name: 'Bed',  slug: 'bed',  order: 2 },
+    ])
+    console.log('✅ Default categories seeded')
+  }
+}
+mongoose.connection.once('open', seedCategories)
+
+app.get('/api/categories', async (req, res) => {
+  try {
+    const cats = await Category.find().sort({ order: 1, name: 1 }).lean()
+    res.json(cats)
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+// ── Admin Categories ────────────────────────────────────────
+app.post('/api/admin/categories', auth, async (req, res) => {
+  try {
+    const { name } = req.body
+    if (!name?.trim()) return res.status(400).json({ message: 'Name is required' })
+    const slug = name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
+    const count = await Category.countDocuments()
+    const cat = await Category.create({ name: name.trim(), slug, order: count + 1 })
+    res.status(201).json(cat)
+  } catch (err) {
+    if (err.code === 11000) return res.status(400).json({ message: 'Category already exists' })
+    res.status(500).json({ message: err.message })
+  }
+})
+
+app.delete('/api/admin/categories/:id', auth, async (req, res) => {
+  try {
+    await Category.findByIdAndDelete(req.params.id)
+    res.json({ message: 'Deleted' })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+// ── Email Reply ─────────────────────────────────────────────
+app.post('/api/admin/messages/:id/reply', auth, async (req, res) => {
+  try {
+    const { replyText } = req.body
+    if (!replyText?.trim()) return res.status(400).json({ message: 'Reply text is required' })
+
+    const msg = await Message.findById(req.params.id)
+    if (!msg) return res.status(404).json({ message: 'Message not found' })
+
+    const { Resend } = require('resend')
+    const resend = new Resend(process.env.RESEND_API_KEY)
+
+    await resend.emails.send({
+      from: 'Velour <onboarding@resend.dev>',
+      to: msg.email,
+      replyTo: 'velour.uk.co@gmail.com',
+      subject: `Re: ${msg.subject}`,
+      html: `
+        <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #1C1814;">
+          <div style="border-bottom: 2px solid #C9A96E; padding-bottom: 16px; margin-bottom: 24px;">
+            <h1 style="font-size: 28px; font-weight: 400; letter-spacing: 4px; margin: 0; color: #1C1814;">VELOUR</h1>
+            <p style="font-size: 11px; color: #8B7355; letter-spacing: 2px; text-transform: uppercase; margin: 4px 0 0;">Premium Furniture</p>
+          </div>
+          <p style="color: #6B5B4E; font-size: 14px; margin-bottom: 8px;">Hi ${msg.name},</p>
+          <div style="font-size: 15px; line-height: 1.8; color: #1C1814; margin-bottom: 32px; white-space: pre-wrap;">${replyText}</div>
+          <div style="border-top: 1px solid #E8E1D6; padding-top: 16px; margin-top: 32px;">
+            <p style="font-size: 12px; color: #8B7355; margin: 0;">Warm regards,</p>
+            <p style="font-size: 13px; font-weight: 600; color: #1C1814; margin: 4px 0;">The Velour Team</p>
+            <p style="font-size: 11px; color: #A09890; margin: 4px 0;">velour.uk.co@gmail.com</p>
+          </div>
+          <div style="background: #F9F6F1; border-top: 1px solid #E8E1D6; margin-top: 32px; padding: 16px; font-size: 11px; color: #A09890;">
+            <p style="margin: 0;">Original message: "${msg.message}"</p>
+          </div>
+        </div>
+      `,
+    })
+
+    await Message.findByIdAndUpdate(req.params.id, { read: true })
+    res.json({ message: 'Reply sent successfully' })
+  } catch (err) {
+    console.error('Email error:', err)
+    res.status(500).json({ message: 'Failed to send reply: ' + err.message })
+  }
+})
