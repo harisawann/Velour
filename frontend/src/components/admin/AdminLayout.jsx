@@ -1,16 +1,18 @@
-import React, { useState } from 'react'
+import React, { useState, useEffect } from 'react'
 import { Link, useLocation, useNavigate, Outlet } from 'react-router-dom'
 import { useAdminAuth } from '../../context/AdminAuthContext'
 import {
   LayoutDashboard, Package, ShoppingBag, Users,
-  LogOut, Menu, X, ChevronRight, BarChart2
+  LogOut, Menu, X, ChevronRight, Mail
 } from 'lucide-react'
+import api from '../../utils/api'
 
 const NAV = [
   { to: '/admin/dashboard', icon: LayoutDashboard, label: 'Dashboard' },
   { to: '/admin/orders',    icon: ShoppingBag,     label: 'Orders' },
   { to: '/admin/products',  icon: Package,         label: 'Products' },
   { to: '/admin/customers', icon: Users,           label: 'Customers' },
+  { to: '/admin/messages',  icon: Mail,            label: 'Messages' },
 ]
 
 export default function AdminLayout() {
@@ -18,6 +20,11 @@ export default function AdminLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const [sideOpen, setSideOpen] = useState(false)
+  const [unread, setUnread] = useState(0)
+
+  useEffect(() => {
+    api.get('/admin/messages?limit=1').then(r => setUnread(r.data.unread || 0)).catch(() => {})
+  }, [location.pathname])
 
   const handleLogout = () => { logout(); navigate('/admin/login') }
 
@@ -43,12 +50,18 @@ export default function AdminLayout() {
       <nav className="flex-1 px-3 py-4 overflow-y-auto">
         {NAV.map(({ to, icon: Icon, label }) => {
           const active = location.pathname === to
+          const isMessages = label === 'Messages'
           return (
             <Link key={to} to={to} onClick={() => setSideOpen(false)}
               className={`flex items-center gap-3 px-3 py-2.5 rounded-sm mb-1 text-sm font-medium transition-colors ${active ? 'bg-white/15 text-white' : 'text-white/60 hover:text-white hover:bg-white/8'}`}>
               <Icon size={17} strokeWidth={1.75} />
               {label}
-              {active && <ChevronRight size={14} className="ml-auto opacity-50" />}
+              {isMessages && unread > 0 && (
+                <span className="ml-auto bg-gold text-white text-[10px] font-bold px-1.5 py-0.5 rounded-full min-w-[18px] text-center">
+                  {unread}
+                </span>
+              )}
+              {active && !isMessages && <ChevronRight size={14} className="ml-auto opacity-50" />}
             </Link>
           )
         })}

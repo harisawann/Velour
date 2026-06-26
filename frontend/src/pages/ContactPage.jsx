@@ -1,6 +1,7 @@
 import React, { useState } from 'react'
 import { Phone, Mail, MapPin, MessageCircle, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
+import api from '../utils/api'
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
@@ -9,9 +10,13 @@ export default function ContactPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSending(true)
-    await new Promise(r => setTimeout(r, 1000))
-    toast.success('Message sent! We\'ll be in touch within 24 hours.')
-    setForm({ name: '', email: '', subject: '', message: '' })
+    try {
+      await api.post('/contact', form)
+      toast.success("Message sent! We'll be in touch within 24 hours.")
+      setForm({ name: '', email: '', subject: '', message: '' })
+    } catch (err) {
+      toast.error('Failed to send message. Please try again.')
+    }
     setSending(false)
   }
 

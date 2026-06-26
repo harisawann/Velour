@@ -7,9 +7,10 @@ const jwt        = require('jsonwebtoken')
 
 const Product  = require('./lib/models/Product')
 const Order    = require('./lib/models/Order')
-const Admin    = require('./lib/models/Admin')
+const Admin    = require("./lib/models/Admin")
+const Message  = require("./lib/models/Message")
 const auth     = require('./lib/auth')
-const { upload, cloudinary, uploadToCloudinary } = require('./lib/cloudinary')
+const { upload, cloudinary } = require('./lib/cloudinary')
 
 const app = express()
 
@@ -233,11 +234,7 @@ app.get('/api/admin/products', auth, async (req, res) => {
 app.post('/api/admin/products', auth, upload.array('images', 6), async (req, res) => {
   try {
     const { title, category, price, comparePrice, desc, stock, status, sizes, colors } = req.body
-    const images = []
-    for (const file of req.files || []) {
-      const url = await uploadToCloudinary(file.buffer, file.mimetype)
-      images.push(url)
-    }
+    const images = req.files?.map(f => f.path) || []
     const product = await Product.create({
       title, category, desc, status: status || 'active',
       price: Number(price),
@@ -267,13 +264,8 @@ app.put('/api/admin/products/:id', auth, upload.array('images', 6), async (req, 
       'variants.colors': colors ? colors.split(',').map(c => c.trim()).filter(Boolean) : [],
     }
     if (req.files?.length) {
-      const urls = []
-      for (const file of req.files) {
-        const url = await uploadToCloudinary(file.buffer, file.mimetype)
-        urls.push(url)
-      }
-      update.images = urls
-    }    
+      update.images = req.files.map(f => f.path)
+    }
     const product = await Product.findByIdAndUpdate(req.params.id, update, { new: true })
     if (!product) return res.status(404).json({ message: 'Product not found' })
     res.json(product)
@@ -337,3 +329,54 @@ app.get('/api/health', (req, res) => res.json({ ok: true, env: process.env.NODE_
 // ── Start ───────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => console.log(`🚀 Velour API running on port ${PORT}`))
+
+// ── Contact Messages (Public) ───────────────────────────────
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, email, subject, message } = req.body
+    if (!name || !email || !subject || !message)
+      return res.status(400).json({ message: 'All fields are required' })
+    await Message.create({ name, email, subject, message })
+    res.status(201).json({ message: 'Message sent successfully' })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+// ── Admin Messages ──────────────────────────────────────────
+app.get('/api/admin/messages', auth, async (req, res) => {
+  try {
+    const { read, page = 1, limit = 20 } = req.query
+    const skip = (parseInt(page) - 1) * parseInt(limit)
+    const filter = {}
+    if (read === 'true') filter.read = true
+    if (read === 'false') filter.read = false
+    const [messages, total, unread] = await Promise.all([
+      Message.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)).lean(),
+      Message.countDocuments(filter),
+      Message.countDocuments({ read: false }),
+    ])
+    res.json({ messages, total, unread })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+app.patch('/api/admin/messages/:id/read', auth, async (req, res) => {
+  try {
+    const msg = await Message.findByIdAndUpdate(req.params.id, { read: true }, { new: true })
+    if (!msg) return res.status(404).json({ message: 'Message not found' })
+    res.json(msg)
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})
+
+app.delete('/api/admin/messages/:id', auth, async (req, res) => {
+  try {
+    await Message.findByIdAndDelete(req.params.id)
+    res.json({ message: 'Deleted' })
+  } catch (err) {
+    res.status(500).json({ message: err.message })
+  }
+})

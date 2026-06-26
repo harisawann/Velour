@@ -18,6 +18,7 @@ import AdminOrders from './pages/admin/AdminOrders'
 import AdminProducts from './pages/admin/AdminProducts'
 import AdminCustomers from './pages/admin/AdminCustomers'
 import AdminOrderDetail from './pages/admin/AdminOrderDetail'
+import AdminMessages from './pages/admin/AdminMessages'
 
 function AdminGuard({ children }) {
   const { admin, loading } = useAdminAuth()
@@ -71,6 +72,7 @@ export default function App() {
             <Route path="products" element={<AdminProducts />} />
             <Route path="customers" element={<AdminCustomers />} />
             <Route path="orders/:id" element={<AdminOrderDetail />} />
+            <Route path="messages" element={<AdminMessages />} />
           </Route>
 
           {/* 404 */}
