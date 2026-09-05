@@ -15,11 +15,11 @@ export default function ProductCard({ product }) {
     toast.success(`${product.title} added to cart`)
   }
 
-const emoji = '🛋'
+  const emoji = product.category === 'sofa' ? '🛋' : '🛏'
   const mainImg = !imgErr && product.images?.[0]
 
   return (
-<Link to={`/product/${product._id}`} className="product-card group block">
+    <Link to={`/product/${product._id}`} className="product-card block">
       {/* Image */}
       <div className="relative overflow-hidden bg-ivory-dark aspect-[4/3]">
         {mainImg ? (
@@ -55,7 +55,7 @@ const emoji = '🛋'
 
       {/* Info */}
       <div className="p-4">
-<p className="eyebrow text-[10px] mb-1">{product.category}</p>
+        <p className="eyebrow text-[10px] mb-1">{product.category === 'sofa' ? 'Sofas' : 'Beds'}</p>
         <h3 className="font-display text-base font-normal text-walnut leading-snug mb-2 line-clamp-2 group-hover:text-gold transition-colors">
           {product.title}
         </h3>

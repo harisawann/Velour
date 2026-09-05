@@ -1,4 +1,5 @@
 const cloudinary = require('cloudinary').v2
+const { CloudinaryStorage } = require('multer-storage-cloudinary')
 const multer = require('multer')
 
 cloudinary.config({
@@ -7,27 +8,18 @@ cloudinary.config({
   api_secret: process.env.CLOUDINARY_API_SECRET,
 })
 
-// Store files in memory, then upload to Cloudinary manually
-const upload = multer({
-  storage: multer.memoryStorage(),
-  limits: { fileSize: 10 * 1024 * 1024 },
+const storage = new CloudinaryStorage({
+  cloudinary,
+  params: {
+    folder:         'velour-products',
+    allowed_formats: ['jpg', 'jpeg', 'png', 'webp'],
+    transformation: [{ width: 1200, height: 900, crop: 'limit', quality: 'auto:good' }],
+  },
 })
 
-// Helper to upload a buffer to Cloudinary
-const uploadToCloudinary = (buffer, mimetype) => {
-  return new Promise((resolve, reject) => {
-    const stream = cloudinary.uploader.upload_stream(
-      {
-        folder: 'velour-products',
-        transformation: [{ width: 1200, height: 900, crop: 'limit', quality: 'auto:good' }],
-      },
-      (error, result) => {
-        if (error) reject(error)
-        else resolve(result.secure_url)
-      }
-    )
-    stream.end(buffer)
-  })
-}
+const upload = multer({
+  storage,
+  limits: { fileSize: 10 * 1024 * 1024 }, // 10MB
+})
 
-module.exports = { cloudinary, upload, uploadToCloudinary }
+module.exports = { cloudinary, upload }

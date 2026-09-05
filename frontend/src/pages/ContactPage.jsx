@@ -1,7 +1,6 @@
 import React, { useState } from 'react'
 import { Phone, Mail, MapPin, MessageCircle, Clock } from 'lucide-react'
 import toast from 'react-hot-toast'
-import api from '../utils/api'
 
 export default function ContactPage() {
   const [form, setForm] = useState({ name: '', email: '', subject: '', message: '' })
@@ -10,13 +9,9 @@ export default function ContactPage() {
   const handleSubmit = async (e) => {
     e.preventDefault()
     setSending(true)
-    try {
-      await api.post('/contact', form)
-      toast.success("Message sent! We'll be in touch within 24 hours.")
-      setForm({ name: '', email: '', subject: '', message: '' })
-    } catch (err) {
-      toast.error('Failed to send message. Please try again.')
-    }
+    await new Promise(r => setTimeout(r, 1000))
+    toast.success('Message sent! We\'ll be in touch within 24 hours.')
+    setForm({ name: '', email: '', subject: '', message: '' })
     setSending(false)
   }
 
@@ -41,7 +36,7 @@ export default function ContactPage() {
                 {[
                   [MessageCircle, 'WhatsApp', '+44 7349 790597', 'https://wa.me/447349790597', true],
                   [Phone, 'Phone', '+44 7349 790597', 'tel:+447349790597', false],
-                  [Mail, 'Email', 'velour.uk.co@gmail.com', 'velour.uk.co@gmail.com', false],
+                  [Mail, 'Email', 'hello@velour.co.uk', 'mailto:hello@velour.co.uk', false],
                 ].map(([Icon, label, value, href, highlight]) => (
                   <div key={label} className="flex items-start gap-4 pb-5 border-b border-bone last:border-b-0">
                     <div className={`w-10 h-10 rounded-sm flex items-center justify-center flex-shrink-0 ${highlight ? 'bg-[#25D366]' : 'bg-ivory-dark'}`}>

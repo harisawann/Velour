@@ -7,10 +7,9 @@ const jwt        = require('jsonwebtoken')
 
 const Product  = require('./lib/models/Product')
 const Order    = require('./lib/models/Order')
-const Admin    = require("./lib/models/Admin")
-const Message  = require("./lib/models/Message")
+const Admin    = require('./lib/models/Admin')
 const auth     = require('./lib/auth')
-const { upload, cloudinary, uploadToCloudinary } = require('./lib/cloudinary')
+const { upload, cloudinary } = require('./lib/cloudinary')
 
 const app = express()
 
@@ -234,11 +233,7 @@ app.get('/api/admin/products', auth, async (req, res) => {
 app.post('/api/admin/products', auth, upload.array('images', 6), async (req, res) => {
   try {
     const { title, category, price, comparePrice, desc, stock, status, sizes, colors } = req.body
-const images = []
-for (const file of req.files || []) {
-  const url = await uploadToCloudinary(file.buffer, file.mimetype)
-  images.push(url)
-}
+    const images = req.files?.map(f => f.path) || []
     const product = await Product.create({
       title, category, desc, status: status || 'active',
       price: Number(price),
@@ -268,13 +263,8 @@ app.put('/api/admin/products/:id', auth, upload.array('images', 6), async (req, 
       'variants.colors': colors ? colors.split(',').map(c => c.trim()).filter(Boolean) : [],
     }
     if (req.files?.length) {
-  const urls = []
-  for (const file of req.files) {
-    const url = await uploadToCloudinary(file.buffer, file.mimetype)
-    urls.push(url)
-  }
-  update.images = urls
-}
+      update.images = req.files.map(f => f.path)
+    }
     const product = await Product.findByIdAndUpdate(req.params.id, update, { new: true })
     if (!product) return res.status(404).json({ message: 'Product not found' })
     res.json(product)
@@ -338,147 +328,3 @@ app.get('/api/health', (req, res) => res.json({ ok: true, env: process.env.NODE_
 // ── Start ───────────────────────────────────────────────────
 const PORT = process.env.PORT || 5000
 app.listen(PORT, () => console.log(`🚀 Velour API running on port ${PORT}`))
-
-// ── Contact Messages (Public) ───────────────────────────────
-app.post('/api/contact', async (req, res) => {
-  try {
-    const { name, email, subject, message } = req.body
-    if (!name || !email || !subject || !message)
-      return res.status(400).json({ message: 'All fields are required' })
-    await Message.create({ name, email, subject, message })
-    res.status(201).json({ message: 'Message sent successfully' })
-  } catch (err) {
-    res.status(500).json({ message: err.message })
-  }
-})
-
-// ── Admin Messages ──────────────────────────────────────────
-app.get('/api/admin/messages', auth, async (req, res) => {
-  try {
-    const { read, page = 1, limit = 20 } = req.query
-    const skip = (parseInt(page) - 1) * parseInt(limit)
-    const filter = {}
-    if (read === 'true') filter.read = true
-    if (read === 'false') filter.read = false
-    const [messages, total, unread] = await Promise.all([
-      Message.find(filter).sort({ createdAt: -1 }).skip(skip).limit(parseInt(limit)).lean(),
-      Message.countDocuments(filter),
-      Message.countDocuments({ read: false }),
-    ])
-    res.json({ messages, total, unread })
-  } catch (err) {
-    res.status(500).json({ message: err.message })
-  }
-})
-
-app.patch('/api/admin/messages/:id/read', auth, async (req, res) => {
-  try {
-    const msg = await Message.findByIdAndUpdate(req.params.id, { read: true }, { new: true })
-    if (!msg) return res.status(404).json({ message: 'Message not found' })
-    res.json(msg)
-  } catch (err) {
-    res.status(500).json({ message: err.message })
-  }
-})
-
-app.delete('/api/admin/messages/:id', auth, async (req, res) => {
-  try {
-    await Message.findByIdAndDelete(req.params.id)
-    res.json({ message: 'Deleted' })
-  } catch (err) {
-    res.status(500).json({ message: err.message })
-  }
-})
-
-// ── Categories (Public) ─────────────────────────────────────
-const Category = require('./lib/models/Category')
-
-async function seedCategories() {
-  const count = await Category.countDocuments()
-  if (count === 0) {
-    await Category.insertMany([
-      { name: 'Sofa', slug: 'sofa', order: 1 },
-      { name: 'Bed',  slug: 'bed',  order: 2 },
-    ])
-    console.log('✅ Default categories seeded')
-  }
-}
-mongoose.connection.once('open', seedCategories)
-
-app.get('/api/categories', async (req, res) => {
-  try {
-    const cats = await Category.find().sort({ order: 1, name: 1 }).lean()
-    res.json(cats)
-  } catch (err) {
-    res.status(500).json({ message: err.message })
-  }
-})
-
-// ── Admin Categories ────────────────────────────────────────
-app.post('/api/admin/categories', auth, async (req, res) => {
-  try {
-    const { name } = req.body
-    if (!name?.trim()) return res.status(400).json({ message: 'Name is required' })
-    const slug = name.trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9-]/g, '')
-    const count = await Category.countDocuments()
-    const cat = await Category.create({ name: name.trim(), slug, order: count + 1 })
-    res.status(201).json(cat)
-  } catch (err) {
-    if (err.code === 11000) return res.status(400).json({ message: 'Category already exists' })
-    res.status(500).json({ message: err.message })
-  }
-})
-
-app.delete('/api/admin/categories/:id', auth, async (req, res) => {
-  try {
-    await Category.findByIdAndDelete(req.params.id)
-    res.json({ message: 'Deleted' })
-  } catch (err) {
-    res.status(500).json({ message: err.message })
-  }
-})
-
-// ── Email Reply ─────────────────────────────────────────────
-app.post('/api/admin/messages/:id/reply', auth, async (req, res) => {
-  try {
-    const { replyText } = req.body
-    if (!replyText?.trim()) return res.status(400).json({ message: 'Reply text is required' })
-
-    const msg = await Message.findById(req.params.id)
-    if (!msg) return res.status(404).json({ message: 'Message not found' })
-
-    const { Resend } = require('resend')
-    const resend = new Resend(process.env.RESEND_API_KEY)
-
-    await resend.emails.send({
-      from: 'Velour Furniture <onboarding@resend.dev>',
-      replyTo: 'velour.uk.co@gmail.com',
-      to: msg.email,
-      subject: `Re: ${msg.subject}`,
-      html: `
-        <div style="font-family: Georgia, serif; max-width: 600px; margin: 0 auto; color: #1C1814;">
-          <div style="border-bottom: 2px solid #C9A96E; padding-bottom: 16px; margin-bottom: 24px;">
-            <h1 style="font-size: 28px; font-weight: 400; letter-spacing: 4px; margin: 0; color: #1C1814;">VELOUR</h1>
-            <p style="font-size: 11px; color: #8B7355; letter-spacing: 2px; text-transform: uppercase; margin: 4px 0 0;">Premium Furniture</p>
-          </div>
-          <p style="color: #6B5B4E; font-size: 14px; margin-bottom: 8px;">Hi ${msg.name},</p>
-          <div style="font-size: 15px; line-height: 1.8; color: #1C1814; margin-bottom: 32px; white-space: pre-wrap;">${replyText}</div>
-          <div style="border-top: 1px solid #E8E1D6; padding-top: 16px; margin-top: 32px;">
-            <p style="font-size: 12px; color: #8B7355; margin: 0;">Warm regards,</p>
-            <p style="font-size: 13px; font-weight: 600; color: #1C1814; margin: 4px 0;">The Velour Team</p>
-            <p style="font-size: 11px; color: #A09890; margin: 4px 0;">velour.uk.co@gmail.com</p>
-          </div>
-          <div style="background: #F9F6F1; border-top: 1px solid #E8E1D6; margin-top: 32px; padding: 16px; font-size: 11px; color: #A09890;">
-            <p style="margin: 0;">Original message: "${msg.message}"</p>
-          </div>
-        </div>
-      `,
-    })
-
-    await Message.findByIdAndUpdate(req.params.id, { read: true })
-    res.json({ message: 'Reply sent successfully' })
-  } catch (err) {
-    console.error('Email error:', err)
-    res.status(500).json({ message: 'Failed to send reply: ' + err.message })
-  }
-})
